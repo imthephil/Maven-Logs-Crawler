@@ -1,0 +1,14 @@
+org.sonatype.cert-support_ahc-cert-spi_0.2-SNAPSHOT,com.ning_async-http-client
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,org.sonatype.cert-support_ahc-cert-spi
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,ca.juliusdavies_not-yet-commons-ssl
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,org.slf4j_slf4j-api
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,ch.qos.logback_logback-classic
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,com.ning_async-http-client
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,org.codehaus.plexus_plexus-component-annotations
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,org.sonatype.http-testing-harness_junit-runner
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,org.sonatype.http-testing-harness_server-provider
+org.sonatype.cert-support_ahc-cert-impl_0.2-SNAPSHOT,junit_junit
+org.sonatype.cert-support_ahc-cert-demo_0.2-SNAPSHOT,org.sonatype.cert-support_ahc-cert-impl
+org.sonatype.cert-support_ahc-cert-demo_0.2-SNAPSHOT,org.slf4j_slf4j-api
+org.sonatype.cert-support_ahc-cert-demo_0.2-SNAPSHOT,ch.qos.logback_logback-classic
+org.sonatype.cert-support_ahc-cert-demo_0.2-SNAPSHOT,org.sonatype.http-testing-harness_server-provider

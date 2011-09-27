@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="lib" path="Librairies/hadoop-core-0.20.203.0.jar"/>
+	<classpathentry kind="lib" path="Librairies/svnkit.jar"/>
+	<classpathentry kind="lib" path="Librairies/org.eclipse.jgit-1.0.0.201106090707-r.jar"/>
+	<classpathentry kind="lib" path="Librairies/jcvsii.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
