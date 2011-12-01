@@ -9,7 +9,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
-import java.util.Scanner;
 
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
@@ -19,13 +18,13 @@ import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 
-import com.ice.cvsc.CVSClient;
 
 
 public class SCM {
 	private String connection; 
 	private String url;
 	private POM pom;
+	private final int TIMEOUT_S = 120;
 	public SCM(String connection, String url,POM pom) {
 		this.connection = connection;
 		this.url = url;
@@ -61,11 +60,11 @@ public class SCM {
 		if(this.connection != null){
 			int state =1;
 			String type = this.getType();
-			//if(type.equals("svn")) state = DownloadSVN(); 
-			if(type.equals("cvs"))state = DownloadCVS(); 
-			//else if(type.equals("git"))state =DownloadGIT(); 
-			//else if(type.equals("hg"))state = DownloadHG();
-			//else state = 1;
+			if(type.equals("svn")) state = DownloadSVN(); 
+			else if(type.equals("cvs"))state = DownloadCVS(); 
+			else if(type.equals("git"))state =DownloadGIT(); 
+			else if(type.equals("hg"))state = DownloadHG();
+			else state = 1;
 			//System.out.println(state + " ON Type:"+type+" - "+this.url +" -> " +this.connection);
 			return state; 
 		}
@@ -77,10 +76,28 @@ public class SCM {
 		String connection=this.connection.replace("scm:hg:", "");
 		String hash = this.pom.hash().replace(".", "-");
 		String cmd = "./get_hg_log.sh "+connection +" "+ "data/Logs/HG/"+hash+".log"+hash;	
+		//System.out.println(cmd);
+		int exitVal=8; 
 		try {
 			Runtime runtime  = Runtime.getRuntime();
 			Process process = runtime.exec(cmd);
-			int exitVal = process.waitFor();
+			
+			// TIMEOUT IMPLEMENTATION
+			long now = System.currentTimeMillis();
+		    long timeoutInMillis = 1000L * TIMEOUT_S;
+		    long finish = now + timeoutInMillis;
+		    while ( isAlive( process ) && ( System.currentTimeMillis() < finish ) )
+		    {
+		        Thread.sleep( 100 );
+		    }
+		    if ( isAlive( process ) )
+		    {
+		    	exitVal = 8; 
+		    	throw new InterruptedException( "Process timeout out after " + TIMEOUT_S + " seconds" );
+		    
+		    }
+		    exitVal = process.exitValue();
+		    
 			if(exitVal==0){
 				if(formatHGLog(hash+".log"))return 0;
 				else return 9;
@@ -93,6 +110,20 @@ public class SCM {
 		}
 
 	}
+	
+	
+
+
+	public static boolean isAlive( Process p ) {
+	    try
+	    {
+	        p.exitValue();
+	        return false;
+	    } catch (IllegalThreadStateException e) {
+	        return true;
+	    }
+	}
+	
 
 	private int DownloadGIT() {
 		String connection=this.url.replace("scm:git:", "");
@@ -102,10 +133,28 @@ public class SCM {
 		connection = connection.replace("git///","git://");	
 		connection = connection.replace("@","://");
 		String cmd = "./get_git_log.sh "+connection +" "+ "data/Logs/GIT/"+this.pom.hash()+".log "+this.pom.hash();
+		//System.out.println(cmd);
+
 		try {
 			Runtime runtime  = Runtime.getRuntime();
 			Process process = runtime.exec(cmd);
-			int exitVal = process.waitFor();
+			// TIMEOUT IMPLEMENTATION
+			int exitVal = 8;
+			long now = System.currentTimeMillis();
+		    long timeoutInMillis = 1000L * TIMEOUT_S;
+		    long finish = now + timeoutInMillis;
+		    while ( isAlive( process ) && ( System.currentTimeMillis() < finish ) )
+		    {
+		        Thread.sleep( 100 );
+		    }
+		    if ( isAlive( process ) )
+		    {
+		    	exitVal = 8; 
+		    	throw new InterruptedException( "Process timeout out after " + TIMEOUT_S + " seconds" );
+		    
+		    }
+		    exitVal = process.exitValue();
+		    
 			if(exitVal==0){
 				if(formatGITLog(this.pom.hash()+".log")) return 0;
 				else return 9;
@@ -122,12 +171,34 @@ public class SCM {
 	}
 
 	private int DownloadCVS() {
-		String connection=this.url.replace("scm:cvs", "");
-		String cmd = "./get_git_log.sh "+connection +" "+ "data/Logs/CVS/"+this.pom.hash()+".log "+this.pom.hash();
+		String connection=this.connection.replace("scm:cvs", "");
+		int ind = connection.lastIndexOf(":");
+		String pack = connection.substring(ind); 
+		String server = connection.substring(0, ind);
+		
+		
+		String cmd = "./get_cvs_log.sh "+server +" "+ "data/Logs/CVS/"+this.pom.hash()+".log "+pack;
+		System.out.println(cmd);
+
 		try {
 			Runtime runtime  = Runtime.getRuntime();
 			Process process = runtime.exec(cmd);
-			int exitVal = process.waitFor();
+			int exitVal = 8;
+			long now = System.currentTimeMillis();
+		    long timeoutInMillis = 1000L * TIMEOUT_S;
+		    long finish = now + timeoutInMillis;
+		    while ( isAlive( process ) && ( System.currentTimeMillis() < finish ) )
+		    {
+		        Thread.sleep( 100 );
+		    }
+		    if ( isAlive( process ) )
+		    {
+		    	exitVal = 8; 
+		    	throw new InterruptedException( "Process timeout out after " + TIMEOUT_S + " seconds" );
+		    
+		    }
+		    exitVal = process.exitValue();
+		    
 			if(exitVal==0){
 				if(formatCVSLog(this.pom.hash()+".log")) return 0;
 				else return 9;
@@ -141,11 +212,6 @@ public class SCM {
 		}
 	
 		
-	}
-
-	private boolean formatCVSLog(String string) {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	private int DownloadSVN() {
@@ -167,7 +233,7 @@ public class SCM {
 		if(this.url.startsWith("svn+ssh")){
 			return 1; 
 		}
-		
+		//System.out.println("svn: " + add);
 		// FIRST WE CONNECT TO REPOSITORY
 		SVNRepositoryFactoryImpl.setup();
 		DAVRepositoryFactory.setup();
@@ -246,6 +312,77 @@ public class SCM {
 	}
 	
 	
+	private boolean formatHGLog(String filename){
+	
+		SimpleDateFormat DATEFORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
+		File aFile = new File("data/Logs/HG/"+filename);
+		FileWriter out = null;
+	
+	
+	
+		try {
+			out = new FileWriter("data/Logs/Formatted/"+filename,true);
+			BufferedReader input =  new BufferedReader(new FileReader(aFile));
+			try {
+				String line = null; //not declared within while loop
+				Log log = null; 
+				String message = ""; 
+				while (( line = input.readLine()) != null){
+					if (!line.startsWith("changeset")){
+						if(!line.contentEquals(""))message += line.replace("summary: ","")+"|"; 
+					}
+					else{
+						if(log!= null){
+							log.setMessage(message);
+							out.write(log.write()+"\r\n");
+						}
+	
+						log = new Log();
+	
+						message ="";
+						log.setType("HG");
+						log.setRevision(line.split("   ")[1].split(":")[0]);
+						line = input.readLine();
+						while(!line.startsWith("user:") && !line.startsWith("changeset") &&line!=null){
+							line = input.readLine();
+						}
+						
+						if(line.startsWith("user:")){
+							log.setAuthor(line.replace("user:        ", ""));
+							line = input.readLine(); 
+							if(line.startsWith("date: ")){ 
+								Calendar c = Calendar.getInstance();
+								c.setTime(DATEFORMAT.parse(line.replace("date:        ", "")));
+								log.setDate(c);
+							}
+	
+							else{
+								System.out.println("error syntax");
+								return false; 
+							}
+						}
+						else{
+							System.out.println("error syntax");
+							return false;
+						}
+					}
+				}
+				return true; 
+			}
+			finally {
+				input.close();
+				out.close(); 
+	
+			}
+		}
+		catch (Exception ex){
+			//ex.printStackTrace();
+			return false;
+		}
+	
+	
+	}
+
 	private boolean formatGITLog(String filename){
 
 		SimpleDateFormat DATEFORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
@@ -318,13 +455,12 @@ public class SCM {
 	}
 	
 	
-	
-	private boolean formatHGLog(String filename){
 
-		SimpleDateFormat DATEFORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
-		File aFile = new File("data/Logs/HG/"+filename);
+	private static boolean formatCVSLog(String filename){
+
+		SimpleDateFormat DATEFORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss",Locale.ENGLISH);
+		File aFile = new File("data/Logs/CVS/"+filename);
 		FileWriter out = null;
-
 
 
 		try {
@@ -333,48 +469,31 @@ public class SCM {
 			try {
 				String line = null; //not declared within while loop
 				Log log = null; 
-				String message = ""; 
 				while (( line = input.readLine()) != null){
-					if (!line.startsWith("changeset")){
-						if(!line.contentEquals(""))message += line.replace("summary: ","")+"|"; 
-					}
-					else{
-						if(log!= null){
-							log.setMessage(message);
-							out.write(log.write()+"\r\n");
-						}
-
-						log = new Log();
-
-						message ="";
-						log.setType("HG");
-						log.setRevision(line.split("   ")[1].split(":")[0]);
-						line = input.readLine();
-						while(!line.startsWith("user:") && !line.startsWith("changeset") &&line!=null){
-							line = input.readLine();
-						}
-						
-						if(line.startsWith("user:")){
-							log.setAuthor(line.replace("user:        ", ""));
+					if(line.startsWith("----------")){
+						line = input.readLine(); 
+						if(line.startsWith("revision ")){
+							log = new Log();
+							log.setType("CVS");
+							log.setRevision(line.split(" ")[1]);
 							line = input.readLine(); 
-							if(line.startsWith("date: ")){ 
+							if(line.startsWith("date: ")){
+								String[] vals = line.split(";");
 								Calendar c = Calendar.getInstance();
-								c.setTime(DATEFORMAT.parse(line.replace("date:        ", "")));
+								c.setTime(DATEFORMAT.parse(	vals[0].replace("date:", "")));
 								log.setDate(c);
+								log.setAuthor(vals[1].replace("  author: ", ""));
+								line = input.readLine(); 
+								log.setMessage(line);
+								out.write(log.write());
+								System.out.println(log.write());
 							}
-
-							else{
-								System.out.println("error syntax");
-								return false; 
-							}
-						}
-						else{
-							System.out.println("error syntax");
-							return false;
 						}
 					}
 				}
 				return true; 
+
+
 			}
 			finally {
 				input.close();
@@ -389,4 +508,5 @@ public class SCM {
 
 
 	}
+
 }

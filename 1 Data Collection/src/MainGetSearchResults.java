@@ -7,7 +7,7 @@ public class MainGetSearchResults {
 		for (char letter='a'; letter <= 'z'; letter++)alphabet[letter-'a'+10]= letter;
 
 		for (char added : alphabet)	{		
-			GetSearchResults sr = new GetSearchResults("a"+added, alphabet);
+			GetSearchResults sr = new GetSearchResults("ab"+added, alphabet);
 			Thread t = new Thread(sr);
 			t.start(); 
 		}
