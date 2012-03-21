@@ -13,7 +13,7 @@ import java.util.Locale;
 import dataStructure.Log;
 
 
-public class Test {
+public class Transpose_data {
 
 	/**
 	 * @param args

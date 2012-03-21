@@ -1,5 +1,7 @@
 package dataStructure;
 
+import gif_logs_filter.GitLogFilter;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -17,6 +19,8 @@ import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
+
+import svn_logs_filter.SVNLogFilter;
 
 
 
@@ -60,56 +64,35 @@ public class SCM {
 		if(this.connection != null){
 			int state =1;
 			String type = this.getType();
-			if(type.equals("svn")) state = DownloadSVN(); 
-			else if(type.equals("cvs"))state = DownloadCVS(); 
-			else if(type.equals("git"))state =DownloadGIT(); 
-			else if(type.equals("hg"))state = DownloadHG();
+			
+			if(type.equals("svn")) state = NewDownloadSVN(); 
+			//else if(type.equals("cvs"))state = DownloadCVS(); 
+			//if(type.equals("git"))state =DownloadGIT(); 
+			//else if(type.equals("hg"))state = DownloadHG();
 			else state = 1;
 			//System.out.println(state + " ON Type:"+type+" - "+this.url +" -> " +this.connection);
-			return state; 
+			return state; 	
+		
 		}
 		else return 7; 
 		
 		
 	}
-	private int DownloadHG() {
-		String connection=this.connection.replace("scm:hg:", "");
-		String hash = this.pom.hash().replace(".", "-");
-		String cmd = "./get_hg_log.sh "+connection +" "+ "data/Logs/HG/"+hash+".log"+hash;	
-		//System.out.println(cmd);
-		int exitVal=8; 
-		try {
-			Runtime runtime  = Runtime.getRuntime();
-			Process process = runtime.exec(cmd);
-			
-			// TIMEOUT IMPLEMENTATION
-			long now = System.currentTimeMillis();
-		    long timeoutInMillis = 1000L * TIMEOUT_S;
-		    long finish = now + timeoutInMillis;
-		    while ( isAlive( process ) && ( System.currentTimeMillis() < finish ) )
-		    {
-		        Thread.sleep( 100 );
-		    }
-		    if ( isAlive( process ) )
-		    {
-		    	exitVal = 8; 
-		    	throw new InterruptedException( "Process timeout out after " + TIMEOUT_S + " seconds" );
-		    
-		    }
-		    exitVal = process.exitValue();
-		    
-			if(exitVal==0){
-				if(formatHGLog(hash+".log"))return 0;
-				else return 9;
-			}
-			else return exitVal;
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			return 8;
-			
-		}
 
+
+	private int NewDownloadSVN() {
+		String add = this.connection; 
+		add = add.replace("scm:svn:", "");
+		if(this.pom !=null) add  = add.replaceAll("$\\{artifactId\\}", this.pom.getArtifactID()); 
+		//System.out.println(add);
+		// MANAGEMENT OF SSH
+		if(this.url.startsWith("svn+ssh")){
+			return 1; 
+		}
+		SVNLogFilter slf = new SVNLogFilter(add,this.pom.hash().replace(".", "-"));
+		return slf.getStatus();
 	}
+
 	
 	
 
@@ -156,8 +139,8 @@ public class SCM {
 		    exitVal = process.exitValue();
 		    
 			if(exitVal==0){
-				if(formatGITLog(this.pom.hash()+".log")) return 0;
-				else return 9;
+				newformatGITLog(this.pom.hash()+".log");
+				return 0;
 			}
 			else return exitVal;
 			
@@ -169,6 +152,8 @@ public class SCM {
 	
 	
 	}
+
+	
 
 	private int DownloadCVS() {
 		String connection=this.connection.replace("scm:cvs", "");
@@ -383,6 +368,11 @@ public class SCM {
 	
 	}
 
+	
+	
+	private void newformatGITLog(String filename) {
+		new GitLogFilter("data/Logs/GIT/"+filename,this.pom.hash().replace(".", "-"));
+	}
 	private boolean formatGITLog(String filename){
 
 		SimpleDateFormat DATEFORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
